@@ -18,7 +18,7 @@ RUN apt-get update && apt-get install -y \
 
 RUN apt-get install -y \
     wget curl git \
-    gcc g++ make \
+    gcc g++ make pkg-config \
     python3.13 python3.13-dev python3.13-venv \
     libssl-dev libbz2-dev libreadline-dev libsqlite3-dev \
     libffi-dev liblzma-dev uuid-dev tk-dev \
@@ -26,6 +26,7 @@ RUN apt-get install -y \
     libboost-all-dev \
     libsnappy-dev \
     liblz4-dev \
+    libhdf5-dev \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Set python3.13 as default and install pip
