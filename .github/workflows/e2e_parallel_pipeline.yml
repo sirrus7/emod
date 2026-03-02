@@ -1,7 +1,6 @@
 name: Build, Test and Publish Pipeline
 
 on:
-  push:
   workflow_dispatch:
     inputs:
       regression_test_cores:
