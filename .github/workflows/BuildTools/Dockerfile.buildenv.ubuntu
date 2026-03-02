@@ -1,0 +1,40 @@
+#######################################################################
+# Create an Ubuntu LINUX environment with tools and dependencies for building the
+# Institute for Disease Modeling, Disease Transmission Kernel (DTK)
+
+# This Docker build file is provided as a convenience for building the DTK on
+# LINUX.
+#######################################################################
+FROM ubuntu:24.04
+
+ENV USER=luser
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y \
+    software-properties-common \
+    && add-apt-repository ppa:deadsnakes/ppa \
+    && apt-get update
+
+RUN apt-get install -y \
+    wget curl git \
+    gcc g++ make \
+    python3.13 python3.13-dev python3.13-venv \
+    libssl-dev libbz2-dev libreadline-dev libsqlite3-dev \
+    libffi-dev liblzma-dev uuid-dev tk-dev \
+    mpich libmpich-dev \
+    libboost-all-dev \
+    libsnappy-dev \
+    liblz4-dev \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Set python3.13 as default and install pip
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.13 1 \
+    && wget -q https://bootstrap.pypa.io/get-pip.py \
+    && python3.13 get-pip.py \
+    && rm get-pip.py
+
+RUN python3 -m pip install --upgrade pip
+RUN python3 -m pip install pbr wheel virtualenvwrapper pyyaml setuptools
+
+# install scons
+RUN python3 -m pip install scons

@@ -1,0 +1,60 @@
+#######################################################################
+# Create a centos LINUX environment with tools and dependencies for building the
+# Institute for Disease Modeling, Disease Transmission Kernel (DTK)
+
+# This Docker build file is provided as a convenience for building the DTK on
+# LINUX.
+#######################################################################
+FROM centos:7
+
+ENV USER=luser
+ENV PATH=$PATH:/usr/lib64/mpich-3.2/bin
+ARG PYVERSION=3.9.9
+
+RUN echo "skip_missing_names_on_install=0" >> /etc/yum.conf
+
+RUN yum install -y https://repo.ius.io/ius-release-el7.rpm
+RUN yum updateinfo -y
+
+RUN yum install -y wget curl git
+
+# install python, runtime and development
+RUN yum install -y gcc-c++ make
+
+# install python dependencies
+RUN yum install -y bzip2-devel tk-devel openssl-devel uuid-devel sqlite-devel gdbm-devel readline-devel xz-lzma-compat xz-devel libffi-devel
+
+# install python
+WORKDIR /usr/src
+RUN wget --quiet https://www.python.org/ftp/python/${PYVERSION}/Python-${PYVERSION}.tgz
+RUN tar -xzf Python-${PYVERSION}.tgz
+WORKDIR Python-${PYVERSION}/
+RUN ./configure --prefix=/usr --enable-shared
+RUN make
+RUN make install
+#RUN ln -s /usr/local/bin/python3 /usr/bin/python3
+#RUN ln -s /usr/local/bin/pip3 /usr/bin/pip3
+#RUN ldconfig /usr/local/lib
+RUN ldconfig
+WORKDIR /usr/src
+RUN rm -rd Python-${PYVERSION}
+
+WORKDIR /
+
+RUN python3 -m pip install --upgrade pip
+RUN python3 -m pip install pbr wheel virtualenvwrapper selinux pyyaml setuptools
+
+# install scons
+WORKDIR /usr/src
+COPY ./SCons-4.3.0.tar.gz /usr/src/SCons-4.3.0.tar.gz
+RUN tar -xzf SCons-4.3.0.tar.gz
+WORKDIR SCons-4.3.0
+RUN python3 setup.py install
+WORKDIR /usr/src
+RUN rm -rd SCons-4.3.0
+
+WORKDIR /
+
+RUN yum install -y rpmdevtools rpm-build rpm-devel openmpi-devel mpich-3.2 mpich-3.2-devel boost-devel boost-mpich-devel snappy snappy-devel lz4-devel sqlite-devel
+
+RUN yum clean all

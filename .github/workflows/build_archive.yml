@@ -15,6 +15,9 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     env:
       scons_option: ${{ inputs.disease_type != 'All' && format('--Disease={0}', inputs.disease_type) || ' ' }}
     steps:
@@ -22,11 +25,25 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+
+      - name: Set buildenv image ref
+        id: image
+        run: |
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "ref=ghcr.io/${OWNER}/dtk-ubuntu-buildenv:latest" >> $GITHUB_OUTPUT
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Check python; build executable; strip symbols; make schema; extract version
         run: |
           docker run --rm \
             -v "${{ github.workspace }}:/EMOD" \
-            docker-production.packages.idmod.org:443/idm/dtk-centos-buildenv:3.0 \
+            ${{ steps.image.outputs.ref }} \
             bash -c "\
               python3 --version && \
               python3 -m pip list && \
