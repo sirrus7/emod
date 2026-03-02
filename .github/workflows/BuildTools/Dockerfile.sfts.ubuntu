@@ -41,7 +41,18 @@ RUN python3 -m pip install pbr wheel virtualenv virtualenvwrapper pyyaml setupto
 # install scons
 RUN python3 -m pip install scons
 
-RUN python3 -m pip install bs4 h5py hypothesis jsonmerge lz4 matplotlib numpy openpyxl pandas python-dateutil python-snappy PyYAML requests seaborn scipy sqlalchemy urllib3 wheel xlrd xmlrunner
+# Scientific computing (prebuilt wheels available for Python 3.13)
+RUN python3 -m pip install numpy scipy pandas matplotlib seaborn
+
+# Data processing and utilities
+RUN python3 -m pip install bs4 hypothesis jsonmerge openpyxl \
+    python-dateutil PyYAML requests sqlalchemy urllib3 wheel xlrd
+
+# Packages with C extensions (require native libs installed above)
+RUN python3 -m pip install h5py lz4 python-snappy
+
+# Test runner (replaces unmaintained xmlrunner, incompatible with Python 3.13)
+RUN python3 -m pip install unittest-xml-reporting
 
 RUN python3 -m pip install dtk-test --index-url https://packages.idmod.org/api/pypi/idm-pypi-production/simple
 RUN python3 -m pip install emod-api --index-url  https://packages.idmod.org/api/pypi/idm-pypi-production/simple
