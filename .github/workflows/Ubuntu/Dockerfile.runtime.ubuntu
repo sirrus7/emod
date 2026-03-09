@@ -1,0 +1,55 @@
+#######################################################################
+# Create an Ubuntu LINUX environment with tools and dependencies for running the
+# EMOD binaries
+
+# This Docker build file is provided as a convenience for running the EMOD binaries
+# on LINUX.
+#######################################################################
+FROM ubuntu:22.04
+# Set the timezone and the frontend
+ENV TZ=UTC DEBIAN_FRONTEND=noninteractive
+# To suppress warning without altering the installation when pip install with root user
+ENV PIP_ROOT_USER_ACTION=ignore
+
+# Install the necessary packages
+RUN apt-get update && apt-get install -y \
+    software-properties-common=0.99.22.9 \
+    && add-apt-repository ppa:deadsnakes/ppa \
+    && apt-get update
+
+# python3.13 versions are from the deadsnakes PPA and may advance with CPython micro releases
+RUN apt-get install -y \
+    python3.13=3.13.6-1+jammy1 python3.13-dev=3.13.6-1+jammy1 python3.13-venv=3.13.6-1+jammy1 \
+    mpich=4.0-3 \
+    libsnappy1v5=1.1.8-1build3 \
+    libc6-dev=2.35-0ubuntu3.11 \
+    tzdata=2025b-0ubuntu0.22.04.1 \
+    wget=1.21.2-2ubuntu1.1 \
+    nano=6.2-1ubuntu0.1 \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Set up timezone
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# Set python3.13 as default and install pip
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.13 1 \
+    && wget -q https://bootstrap.pypa.io/get-pip.py \
+    && python3.13 get-pip.py \
+    && rm get-pip.py
+
+RUN python3 -m pip install pip --upgrade
+# Create a symbolic link to python3
+RUN ln -s /usr/bin/python3 /usr/bin/python
+# Create a directory for pip configurations
+RUN mkdir /root/.pip
+# Copy the pip configuration file
+COPY pip.conf /root/.pip
+
+# Add the requirements file
+ADD requirements.txt /tmp/
+
+# make the PIP index configurable so we can build against staging, production, or a local PyPI server
+ARG CONTAINER_VERSION
+
+# Install the packages
+RUN bash -c "pip3 install -r /tmp/requirements.txt"

@@ -1,0 +1,58 @@
+#######################################################################
+# Create an Ubuntu LINUX environment with tools and dependencies for running
+# regression and scientific feature tests with the EMOD binaries
+
+# This Docker build file is provided as a convenience for running scientific
+# feature tests with the EMOD binaries on LINUX.
+#######################################################################
+FROM ubuntu:22.04
+
+ENV USER=luser
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y \
+    software-properties-common=0.99.22.9 \
+    && add-apt-repository ppa:deadsnakes/ppa \
+    && apt-get update
+
+# python3.13 versions are from the deadsnakes PPA and may advance with CPython micro releases
+RUN apt-get install -y \
+    wget=1.21.2-2ubuntu1.1 curl=7.81.0-1ubuntu1.22 git=1:2.34.1-1ubuntu1.15 \
+    gcc=4:11.2.0-1ubuntu1 g++=4:11.2.0-1ubuntu1 make=4.3-4.1build1 pkg-config=0.29.2-1ubuntu3 \
+    python3.13=3.13.6-1+jammy1 python3.13-dev=3.13.6-1+jammy1 python3.13-venv=3.13.6-1+jammy1 \
+    libssl-dev=3.0.2-0ubuntu1.20 libbz2-dev=1.0.8-5build1 libreadline-dev=8.1.2-1 libsqlite3-dev=3.37.2-2ubuntu0.5 \
+    libffi-dev=3.4.2-4 liblzma-dev=5.2.5-2ubuntu1 uuid-dev=2.37.2-4ubuntu3.4 tk-dev=8.6.11+1build2 \
+    mpich=4.0-3 libmpich-dev=4.0-3 \
+    libboost-all-dev=1.74.0.3ubuntu7 \
+    libsnappy-dev=1.1.8-1build3 \
+    liblz4-dev=1.9.3-2build2 \
+    libhdf5-dev=1.10.7+repack-4ubuntu2 \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Set python3.13 as default and install pip
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.13 1 \
+    && wget -q https://bootstrap.pypa.io/get-pip.py \
+    && python3.13 get-pip.py \
+    && rm get-pip.py
+
+RUN python3 -m pip install --upgrade pip
+RUN python3 -m pip install pbr~=7.0 wheel~=0.46 virtualenv~=20.35 virtualenvwrapper~=6.1 PyYAML~=6.0 setuptools~=82.0
+
+# install scons
+RUN python3 -m pip install scons~=4.10
+
+# Scientific computing (prebuilt wheels available for Python 3.13)
+RUN python3 -m pip install numpy~=2.4 scipy~=1.17 pandas~=3.0 matplotlib~=3.10 seaborn~=0.13
+
+# Data processing and utilities
+RUN python3 -m pip install beautifulsoup4~=4.14 hypothesis~=6.148 jsonmerge~=1.9 openpyxl~=3.1 \
+    python-dateutil~=2.9 requests~=2.32 sqlalchemy~=2.0 urllib3~=2.4 xlrd~=2.0
+
+# Packages with C extensions (require native libs installed above)
+RUN python3 -m pip install h5py~=3.15 lz4~=4.4 python-snappy~=0.7
+
+# Test runner (replaces unmaintained xmlrunner, incompatible with Python 3.13)
+RUN python3 -m pip install unittest-xml-reporting~=4.0
+
+RUN python3 -m pip install dtk-test --index-url https://packages.idmod.org/api/pypi/idm-pypi-production/simple
+RUN python3 -m pip install emod-api --index-url  https://packages.idmod.org/api/pypi/idm-pypi-production/simple

@@ -6,8 +6,9 @@ on:
     branches:
       - main
     paths:
-      - '.github/workflows/BuildTools/Dockerfile.buildenv.ubuntu'
-      - '.github/workflows/BuildTools/Dockerfile.sfts.ubuntu'
+      - '.github/workflows/Ubuntu/Dockerfile.buildenv.ubuntu'
+      - '.github/workflows/Ubuntu/Dockerfile.testenv.ubuntu'
+      - '.github/workflows/Ubuntu/Dockerfile.runtime.ubuntu'
 
 env:
   REGISTRY: ghcr.io
@@ -25,10 +26,16 @@ jobs:
         include:
           - name: buildenv
             dockerfile: Dockerfile.buildenv.ubuntu
-            image: dtk-ubuntu-buildenv
-          - name: sfts
-            dockerfile: Dockerfile.sfts.ubuntu
-            image: dtk-ubuntu-sfts
+            image: emod-ubuntu-buildenv
+            context: Ubuntu
+          - name: testenv
+            dockerfile: Dockerfile.testenv.ubuntu
+            image: emod-ubuntu-testenv
+            context: Ubuntu
+          - name: runtime
+            dockerfile: Dockerfile.runtime.ubuntu
+            image: emod-ubuntu-runtime
+            context: Ubuntu
 
     steps:
       - name: Checkout repo
@@ -59,8 +66,8 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: .github/workflows/BuildTools
-          file: .github/workflows/BuildTools/${{ matrix.dockerfile }}
+          context: ${{ matrix.context }}
+          file: Ubuntu/${{ matrix.dockerfile }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
